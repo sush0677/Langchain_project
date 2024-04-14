@@ -1,6 +1,24 @@
 import streamlit as st
-from langchain.chains import LLMChain, SimpleSequentialChain, LLMRouterChain, TransformChain, OpenAIChain, MathChain
-from langchain.templates import HumanMessagePromptTemplate, ChatPromptTemplate
+import os
+from azure.identity import DefaultAzureCredential
+from azure.identity import ChainedTokenCredential, ManagedIdentityCredential, AzureCliCredential
+from langchain_core.messages import HumanMessage
+from langchain_openai import AzureChatOpenAI
+from langchain.chains import LLMChain, SimpleSequentialChain
+from langchain.chains import SequentialChain
+from langchain.chains.router.multi_prompt_prompt import MULTI_PROMPT_ROUTER_TEMPLATE
+from langchain.chains.router.llm_router import LLMRouterChain,RouterOutputParser
+from langchain.chains.router import MultiPromptChain
+from langchain.chains import TransformChain
+
+# Create an instance of the AzureChatOpenAI model
+model = AzureChatOpenAI(
+    deployment_name="exq-gpt-35",
+    azure_endpoint="https://exquitech-openai-2.openai.azure.com/",
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+    temperature=0,
+    openai_api_version="2024-02-15-preview"
+)
 
 # Define function to generate a funny company name using LLMChain
 def generate_company_name(product):
@@ -30,17 +48,10 @@ def route_response(user_input):
 def transform_text(input_text):
     return input_text.upper()
 
-# Define function for OpenAIChain: Summarizes input text using OpenAI's API
-def summarize_text(input_text):
-    # Call OpenAI's API to summarize the text
-    # Replace 'api_key' with your OpenAI API key
-    # Replace 'model_name' with the desired model name (e.g., 'text-davinci-003')
-    # Replace 'max_tokens' with the maximum number of tokens for the summary
-    return openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=input_text,
-        max_tokens=50
-    )
+# Define function for OpenAIChain: Sends user input to Azure Chat OpenAI model and retrieves response
+def send_to_azure_chat(input_text):
+    response = model.send_message(input_text)
+    return response['message']
 
 # Define function for MathChain: Evaluates mathematical expressions
 def evaluate_expression(expression):
@@ -97,13 +108,13 @@ def main():
 
     elif selected_chain == "OpenAIChain":
         st.subheader("OpenAIChain")
-        st.write("Functionality: Summarizes input text using OpenAI's API.")
-        input_text = st.text_area("Enter text")
-        summarize_button = st.button("Summarize")
+        st.write("Functionality: Interacts with Azure Chat OpenAI model.")
+        input_text = st.text_input("You:")
+        send_button = st.button("Send")
 
-        if summarize_button:
-            summary = summarize_text(input_text)
-            st.success(summary)
+        if send_button:
+            response = send_to_azure_chat(input_text)
+            st.text_area("Bot:", response, height=200)
 
     elif selected_chain == "MathChain":
         st.subheader("MathChain")
