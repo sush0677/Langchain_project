@@ -1,6 +1,5 @@
 import streamlit as st
 import os
-from azure.identity import DefaultAzureCredential
 from azure.identity import ChainedTokenCredential, ManagedIdentityCredential, AzureCliCredential
 from langchain_core.messages import HumanMessage
 from langchain_openai import AzureChatOpenAI
@@ -12,6 +11,10 @@ from langchain.chains.router import MultiPromptChain
 from langchain.chains import TransformChain
 
 # Create an instance of the AzureChatOpenAI model
+
+os.environ["OPENAI_API_VERSION"] = "2024-02-15-preview"
+os.environ["AZURE_OPENAI_ENDPOINT"] = "https://exquitech-openai-2.openai.azure.com/"
+os.environ["AZURE_OPENAI_API_KEY"] = "4f00a70876a542a18b30f13570248cdb"
 model = AzureChatOpenAI(
     deployment_name="exq-gpt-35",
     azure_endpoint="https://exquitech-openai-2.openai.azure.com/",
